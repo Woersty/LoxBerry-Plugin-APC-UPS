@@ -1,2 +1,4 @@
 # LoxBerry-Plugin-APC-UPS
-APC UPS Plugin
+A LoxBerry Plugin
+-
+For Details visit http://www.loxwiki.eu/display/LOXBERRY/Plugins#Plugins-APC-UPS

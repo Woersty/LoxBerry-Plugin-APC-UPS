@@ -1,0 +1,29 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          APC-UPS
+# Required-Start:    $remote_fs $syslog $network 
+# Required-Stop:     $remote_fs $syslog $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+### END INIT INFO
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin:REPLACEBYBASEFOLDER/bin"
+PATH=$PATH.":REPLACEBYBASEFOLDER/sbin"
+
+. /lib/lsb/init-functions
+
+
+(ls -1 REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/)|while read script; do 
+echo "Replace /etc/apcupsd/$script with Symlink to REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/$script" 
+rm /etc/apcupsd/$script
+ln -s REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/$script /etc/apcupsd/$script 
+echo "Replace /etc/apcupsd by REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER in $script" 
+/bin/sed -i "s#/etc/apcupsd#REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER#" REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/$script
+done
+/bin/sed -i "s#ISCONFIGURED=no#ISCONFIGURED=yes#" /etc/default/apcupsd
+/bin/sed -i "s#/etc/apcupsd/powerfail#REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/powerfail#" /etc/init.d/apcupsd
+
+systemctl daemon-reload
+/etc/init.d/apcupsd restart
+
+exit 0

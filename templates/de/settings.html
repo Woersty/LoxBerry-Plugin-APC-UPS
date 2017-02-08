@@ -1,0 +1,59 @@
+									<div id="dialog"></div>
+									<link rel="stylesheet" href="/plugins/<!--$psubfolder-->/style.css">
+									<script src="/plugins/<!--$psubfolder-->/jquery-ui-1.9.2.custom.min.js"></script>
+									<center>
+										<img src="/system/images/icons/<!--$psubfolder-->/icon_64.png">
+										<table border=0 cellpadding=10>
+											<tr>
+												<td>
+													<a  id="btnlog" data-icon="arrow-d" data-role="button" data-mini="true" target="log" href="/plugins/<!--$psubfolder-->/?mode=download_logfile"><!--$TXT_SAVE_LOGFILE--></a>
+												</td>
+												<td>
+													<a  id="btnlog" data-icon="search" data-role="button" data-mini="true" target="log" href="/plugins/<!--$psubfolder-->/?mode=show_logfile"><!--$TXT_SHOW_LOGFILE--></a>
+												</td>
+												<td>
+													<a  id="btnlog" data-icon="delete" data-role="button" data-mini="true" target="log" href="/plugins/<!--$psubfolder-->/?mode=empty_logfile"><!--$TXT_EMPTY_LOGFILE--></a>
+												</td>
+											</tr>
+										</table>
+									</center>
+									<form method="post" data-ajax="false" name="main_form" id="main_form" action="./index.cgi">
+										<div class="form-group">
+											<center>
+												<a target="APC-UPS" href="/plugins/<!--$psubfolder-->/"><!--$TXT_PLUGIN_PAGE--></a>
+												<br/><br/>
+												<table class="formtable" style="border:solid black 1px; border-radius:6px; -moz-border-radius:6px; background-color: #cfffcf;">
+													<tr>
+														<td>
+															<div style="cursor:default; font-size:1.5em; font-family: monospace;" id="sml_devices_div">
+																<nobr><!--$ups_params_list--></nobr>
+															</div>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div id="form-error-message" class="form-error-message">&nbsp;</div>
+														</td>
+													</tr>
+												</table>
+											</center>
+										</div>
+									</form>
+									<p>
+										<center>
+											<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi"><!--$TXT_BTN_BACK--></a>
+										</center>
+									</p>
+									<script>
+										var $messages = $('#form-error-message');
+										$messages.fadeOut(1);
+										$.validate(
+										{
+											modules : 'security',
+											errorMessagePosition : $messages,
+										});
+										$( document ).ready(function()
+										{
+											$('#btnscan').trigger('click');
+										});
+									</script>
