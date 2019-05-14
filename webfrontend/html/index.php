@@ -1,93 +1,106 @@
 <?php
-// LoxBerry APC-UPS Plugin
-// © git@loxberry.woerstenfeld.de
-// 08.02.2017 22:53:31
-// v0.1
+// LoxBerry Miniserverbackup Plugin
+// Christian Woerstenfeld - git@loxberry.woerstenfeld.de
 
-// Start timer to measure script execution time
-$start = microtime(true);
+// Header output
+header('Content-Type: text/plain; charset=utf-8');
 
-// Configure directories and Logfile path 
-$psubdir              =array_pop(array_filter(explode('/',pathinfo($_SERVER["SCRIPT_FILENAME"],PATHINFO_DIRNAME))));
-$mydir                =pathinfo($_SERVER["SCRIPT_FILENAME"],PATHINFO_DIRNAME);
-$pluginlogfile        =$mydir."/../../../../log/plugins/$psubdir/apc_ups.log";
+// Calculate running time
+$start =  microtime(true);	
 
+// Go to the right directory
+chdir(dirname($_SERVER['PHP_SELF']));
+
+// Include System Lib
+require_once "loxberry_system.php";
+require_once "loxberry_log.php";
+$L = LBSystem::readlanguage("language.ini");
+
+// Configure Logfile path 
+$logfilename	= LBPLOGDIR."/apc_ups_".date("Y-m-d_H\hi\ms\s",time()).".log";
 // Configure error handling 
-ini_set("display_errors", false);       						// Do not display in browser			
-ini_set("error_log", $pluginlogfile);								// Pass errors to logfile
-ini_set("log_errors", 1);														// Log errors
+ini_set("display_errors", false);      	// Do not display in browser			
+ini_set("error_log", $logfilename);		// Pass errors to logfile
+ini_set("log_errors", 1);				// Log errors
+$params = [
+    "name" => $L["LOGGING.LOG_GROUPNAME_PLUGIN"],
+    "filename" => $logfilename,
+    "addtime" => 1];
+$log = LBLog::newLog ($params);
 
-// Set default for 'mode' if not existent in request variables
-if (!isset($_REQUEST["mode"])) { $_REQUEST["mode"] = 'normal'; }
+function debug($line,$message = "", $loglevel = 7)
+{
+	global $L,$plugindata,$logfilename;
+	if ( $plugindata['PLUGINDB_LOGLEVEL'] >= intval($loglevel) )  
+	{
+		$message = preg_replace('/["]/','',$message); // Remove quotes => https://github.com/mschlenstedt/Loxberry/issues/655
+		$raw_message = $message;
+		if ( $plugindata['PLUGINDB_LOGLEVEL'] >= 6 && $L["ERRORS.LINE"] != "" ) $message .= " ".$L["ERRORS.LINE"]." ".$line;
+		if ( isset($message) && $message != "" ) 
+		{
 
-// Check mode for downloading or displaying or deleting logfile
-if($_REQUEST["mode"] == "download_logfile")
-{
-  if (file_exists($pluginlogfile))
-  {
-    error_log( date('Y-m-d H:i:s ')."[LOG] Download logfile\n", 3, $pluginlogfile);
-    header('Content-Description: File Transfer');
-    header('Content-Type: text/plain');
-    header('Content-Disposition: attachment; filename="'.basename($pluginlogfile).'"');
-    header('Expires: 0');
-    header('Cache-Control: must-revalidate');
-    header('Pragma: public');
-    header('Content-Length: ' . filesize($pluginlogfile));
-    readfile($pluginlogfile);
-  }
-  else
-  {
-    error_log( date('Y-m-d H:i:s ')."[ERR] E0001: Error reading logfile!\n", 3, $pluginlogfile);
-    die("ERROR E0001: Error reading logfile.");
-  }
-  exit;
+			switch ($loglevel)
+			{
+			    case 0:
+			        // OFF
+			        break;
+			    case 1:
+			    	$message = "<ALERT> ".$message;
+			        LOGALERT  (         $message);
+					array_push($summary,$message);
+			        break;
+			    case 2:
+			    	$message = "<CRITICAL> ".$message;
+			        LOGCRIT   (         $message);
+					array_push($summary,$message);
+			        break;
+			    case 3:
+			    	$message = "<ERROR> ".$message;
+			        LOGERR    (         $message);
+					array_push($summary,$message);
+			        break;
+			    case 4:
+			    	$message = "<WARNING> ".$message;
+			        LOGWARN   (         $message);
+					array_push($summary,$message);
+			        break;
+			    case 5:
+			    	$message = "<OK> ".$message;
+			        LOGOK     (         $message);
+			        break;
+			    case 6:
+			    	$message = "<INFO> ".$message;
+			        LOGINF   (         $message);
+			        break;
+			    case 7:
+			    default:
+			    	$message = $message;
+			        LOGDEB   (         $message);
+			        break;
+			}
+			if ( $loglevel <= 4 ) 
+			{
+				$at_least_one_error = 1;
+				$search  = array('<ALERT>', '<CRITICAL>', '<ERROR>','<WARNING>');
+				$replace = array($L["LOGGING.NOTIFY_LOGLEVEL1"],$L["LOGGING.NOTIFY_LOGLEVEL2"],$L["LOGGING.NOTIFY_LOGLEVEL3"],$L["LOGGING.NOTIFY_LOGLEVEL4"],);
+				$notification = array (
+				"PACKAGE" => LBPPLUGINDIR,
+				"NAME" => $L['APC_UPS.MY_NAME'],
+				"MESSAGE" => str_replace($search, $replace, $raw_message),
+				"SEVERITY" => 3,
+				"LOGFILE"	=> $logfilename);
+				notify_ext ($notification);
+				return;
+			}
+		}
+	}
+	return;
 }
-else if($_REQUEST["mode"] == "show_logfile")
-{
-  if (file_exists($pluginlogfile))
-  {
-    error_log( date('Y-m-d H:i:s ')."[LOG] Show logfile\n", 3, $pluginlogfile);
-    header('Content-Description: File Transfer');
-    header('Content-Type: text/plain');
-    header('Content-Disposition: inline; filename="'.basename($pluginlogfile).'"');
-    header('Expires: 0');
-    header('Cache-Control: must-revalidate');
-    header('Pragma: public');
-    header('Content-Length: ' . filesize($pluginlogfile));
-    readfile($pluginlogfile);
-  }
-  else
-  {
-    error_log( date('Y-m-d H:i:s ')."[ERR] E0001: Error reading logfile!\n", 3, $pluginlogfile);
-    die("ERROR E0001: Error reading logfile.");
-  }
-  exit;
-}
-else if($_REQUEST["mode"] == "empty_logfile")
-{
-  if (file_exists($pluginlogfile))
-  {
-    $f = @fopen("$pluginlogfile", "r+");
-    if ($f !== false)
-    {
-      ftruncate($f, 0);
-      fclose($f);
-      error_log( date('Y-m-d H:i:s ')."[LOG] Logfile content successfully deleted.\n", 3, $pluginlogfile);
-      echo "Logfile content successfully deleted.\n";
-    }
-    else
-    {
-      error_log( date('Y-m-d H:i:s ')."[ERR] E0002: Logfile content not deleted due to problems doing it.\n", 3, $pluginlogfile);
-      die("ERROR E0002: Logfile content not deleted due to problems doing it.");
-    }
-  }
-  else
-  {
-    error_log( date('Y-m-d H:i:s ')."[ERR] E0001: Error reading logfile!\n", 3, $pluginlogfile);
-    die("ERROR E0001: Error reading logfile.");
-  }
-  exit;
-}
+
+$message = $L["LOGGING.LOG_PLUGIN_CALLED"];
+$log->LOGTITLE($message);
+debug(__line__,$message,5);
+
 $string_array = explode(PHP_EOL,shell_exec ('/sbin/apcaccess status 2>&1'));  
 
 // Build XML page body
@@ -100,26 +113,42 @@ echo " <date_RFC822>".date(DATE_RFC822)."</date_RFC822>\n";
 // If no data was read, exit
 if ( count($string_array) == 0) 
 {
-	echo " <error>Got no data from UPS</error>\n";
-  echo " <execution>".round( ( microtime(true) - $start ),5 )." s</execution>\n";
-  echo " <status>ERROR</status>\n";
-  echo "</root>\n";
-  error_log( date('Y-m-d H:i:s ')."[ERR] E0006: Got no data from UPS\n", 3, $pluginlogfile);
-  exit(1);
+	$message = $L["ERRORS.ERR01_XML_NO_DATA"];
+	$log->LOGTITLE($message);
+	echo " <error>".$message."</error>\n";
+	echo " <execution>".round( ( microtime(true) - $start ),5 )." s</execution>\n";
+	echo " <status>ERROR</status>\n";
+	echo "</root>\n";
+	debug(__line__,$message,3);
+	LOGEND ("");
+	exit(1);
 } 
+else
+{
+	$message = $L["LOGGING.LOG_XML_DATA_OK"];
+	debug(__line__,$message,6);
+	debug(__line__,join("\n",$string_array));
+}
 
 // Loop trough each parameter
-echo " <UPS>\n";
+$output = " <UPS>\n";
 foreach ($string_array as $lines) 
 {
-  $values = explode(": ",$lines);  
+	$values = explode(": ",$lines);  
 	$values[0] = str_replace(" ","_",trim($values[0]));
 	if ( $values[0] <> "" )
 	{ 
-		echo "   <$values[0]>".trim($values[1])."</$values[0]>\n";
+		$output .= "   <$values[0]>".trim($values[1])."</$values[0]>\n";
 	}
 }
-echo " </UPS>\n";
-echo " <execution>".round( ( microtime(true) - $start ),5 )." s</execution>\n";
-echo "</root>\n";
+$output .= " </UPS>\n";
+$output .= " <execution>".round( ( microtime(true) - $start ),5 )." s</execution>\n";
+$output .= "</root>\n";
+$message = $L["LOGGING.LOG_XML_DATA_SEND"];
+debug(__line__,$message,5);
+debug(__line__,$output);
+echo $output;
+$message = $L["LOGGING.LOG_PLUGIN_FINISHED"];
+$log->LOGTITLE($message);
+LOGEND ("");
 exit(0);
