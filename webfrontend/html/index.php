@@ -2,9 +2,6 @@
 // LoxBerry Miniserverbackup Plugin
 // Christian Woerstenfeld - git@loxberry.woerstenfeld.de
 
-// Header output
-header('Content-Type: text/plain; charset=utf-8');
-
 // Calculate running time
 $start =  microtime(true);	
 
@@ -15,18 +12,19 @@ chdir(dirname($_SERVER['PHP_SELF']));
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 $L = LBSystem::readlanguage("language.ini");
+$plugindata = LBSystem::plugindata();
 
 // Configure Logfile path 
 $logfilename	= LBPLOGDIR."/apc_ups_".date("Y-m-d_H\hi\ms\s",time()).".log";
-// Configure error handling 
-ini_set("display_errors", false);      	// Do not display in browser			
-ini_set("error_log", $logfilename);		// Pass errors to logfile
-ini_set("log_errors", 1);				// Log errors
 $params = [
     "name" => $L["LOGGING.LOG_GROUPNAME_PLUGIN"],
     "filename" => $logfilename,
     "addtime" => 1];
 $log = LBLog::newLog ($params);
+// Configure error handling 
+ini_set("display_errors", false);      	// Do not display in browser			
+ini_set("error_log", $logfilename);		// Pass errors to logfile
+ini_set("log_errors", 1);				// Log errors
 
 function debug($line,$message = "", $loglevel = 7)
 {
@@ -35,7 +33,7 @@ function debug($line,$message = "", $loglevel = 7)
 	{
 		$message = preg_replace('/["]/','',$message); // Remove quotes => https://github.com/mschlenstedt/Loxberry/issues/655
 		$raw_message = $message;
-		if ( $plugindata['PLUGINDB_LOGLEVEL'] >= 6 && $L["ERRORS.LINE"] != "" ) $message .= " ".$L["ERRORS.LINE"]." ".$line;
+		if ( $plugindata['PLUGINDB_LOGLEVEL'] == 7 && $L["ERRORS.LINE"] != "" ) $message .= " ".$L["ERRORS.LINE"]." ".$line;
 		if ( isset($message) && $message != "" ) 
 		{
 
@@ -45,31 +43,31 @@ function debug($line,$message = "", $loglevel = 7)
 			        // OFF
 			        break;
 			    case 1:
-			    	$message = "<ALERT> ".$message;
+			    	$message = "<ALERT>".$message;
 			        LOGALERT  (         $message);
 					array_push($summary,$message);
 			        break;
 			    case 2:
-			    	$message = "<CRITICAL> ".$message;
+			    	$message = "<CRITICAL>".$message;
 			        LOGCRIT   (         $message);
 					array_push($summary,$message);
 			        break;
 			    case 3:
-			    	$message = "<ERROR> ".$message;
+			    	$message = "<ERROR>".$message;
 			        LOGERR    (         $message);
 					array_push($summary,$message);
 			        break;
 			    case 4:
-			    	$message = "<WARNING> ".$message;
+			    	$message = "<WARNING>".$message;
 			        LOGWARN   (         $message);
 					array_push($summary,$message);
 			        break;
 			    case 5:
-			    	$message = "<OK> ".$message;
+			    	$message = "<OK>".$message;
 			        LOGOK     (         $message);
 			        break;
 			    case 6:
-			    	$message = "<INFO> ".$message;
+			    	$message = "<INFO>".$message;
 			        LOGINF   (         $message);
 			        break;
 			    case 7:
@@ -80,7 +78,6 @@ function debug($line,$message = "", $loglevel = 7)
 			}
 			if ( $loglevel <= 4 ) 
 			{
-				$at_least_one_error = 1;
 				$search  = array('<ALERT>', '<CRITICAL>', '<ERROR>','<WARNING>');
 				$replace = array($L["LOGGING.NOTIFY_LOGLEVEL1"],$L["LOGGING.NOTIFY_LOGLEVEL2"],$L["LOGGING.NOTIFY_LOGLEVEL3"],$L["LOGGING.NOTIFY_LOGLEVEL4"],);
 				$notification = array (
@@ -97,11 +94,14 @@ function debug($line,$message = "", $loglevel = 7)
 	return;
 }
 
+LOGSTART ("");
 $message = $L["LOGGING.LOG_PLUGIN_CALLED"];
 $log->LOGTITLE($message);
-debug(__line__,$message,5);
 
-$string_array = explode(PHP_EOL,shell_exec ('/sbin/apcaccess status 2>&1'));  
+// Read language info
+debug(__line__,count($L)." ".$L["LOGGING.LOG_LANGUAGE_STRINGS_READ"],6);
+
+@exec('/sbin/apcaccess status 2>&1',$result,$retval);
 
 // Build XML page body
 header("Content-type: text/xml");
@@ -111,11 +111,13 @@ echo " <timestamp>".time()."</timestamp>\n";
 echo " <date_RFC822>".date(DATE_RFC822)."</date_RFC822>\n";
 
 // If no data was read, exit
-if ( count($string_array) == 0) 
+if ( $retval != 0 )  
 {
 	$message = $L["ERRORS.ERR01_XML_NO_DATA"];
 	$log->LOGTITLE($message);
 	echo " <error>".$message."</error>\n";
+	echo " <errorcode>".$retval."</errorcode>\n";
+	echo " <errorinfo>".htmlentities(join("\n",$result))."</errorinfo>\n";
 	echo " <execution>".round( ( microtime(true) - $start ),5 )." s</execution>\n";
 	echo " <status>ERROR</status>\n";
 	echo "</root>\n";
@@ -126,13 +128,13 @@ if ( count($string_array) == 0)
 else
 {
 	$message = $L["LOGGING.LOG_XML_DATA_OK"];
-	debug(__line__,$message,6);
-	debug(__line__,join("\n",$string_array));
+	debug(__line__,$message,5);
+	debug(__line__,join("\n",$result));
 }
 
 // Loop trough each parameter
 $output = " <UPS>\n";
-foreach ($string_array as $lines) 
+foreach ($result as $lines) 
 {
 	$values = explode(": ",$lines);  
 	$values[0] = str_replace(" ","_",trim($values[0]));
@@ -145,10 +147,18 @@ $output .= " </UPS>\n";
 $output .= " <execution>".round( ( microtime(true) - $start ),5 )." s</execution>\n";
 $output .= "</root>\n";
 $message = $L["LOGGING.LOG_XML_DATA_SEND"];
-debug(__line__,$message,5);
-debug(__line__,$output);
+
+if ( $plugindata['PLUGINDB_LOGLEVEL'] == 7 ) 
+{
+	debug(__line__,$message."\n".htmlentities($output),5);
+}
+else
+{
+	debug(__line__,$message,5);
+}
 echo $output;
 $message = $L["LOGGING.LOG_PLUGIN_FINISHED"];
 $log->LOGTITLE($message);
+LOGOK ($message);
 LOGEND ("");
 exit(0);
