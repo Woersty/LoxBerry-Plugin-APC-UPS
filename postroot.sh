@@ -9,18 +9,6 @@ else
 	kill -9 $CS_PID;
 fi
 	
-(ls -1 REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/)|while read script; do 
-echo "Replace /etc/apcupsd/$script with Symlink to REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/$script" 
-rm /etc/apcupsd/$script
-ln -s REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/$script /etc/apcupsd/$script 
-echo "Replace /etc/apcupsd by REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER in $script" 
-/bin/sed -i "s#/etc/apcupsd#REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER#" REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/$script
-done
-/bin/sed -i "s#ISCONFIGURED=no#ISCONFIGURED=yes#" /etc/default/apcupsd
-/bin/sed -i "s#/etc/apcupsd/powerfail#REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/powerfail#" /etc/init.d/apcupsd
-
-systemctl daemon-reload
-echo "Restarting APC UPS Daemon"
-/etc/init.d/apcupsd restart >/dev/null 2>&1
+echo `$ARGV5/system/daemons/plugins/$ARGV2`
 
 exit 0

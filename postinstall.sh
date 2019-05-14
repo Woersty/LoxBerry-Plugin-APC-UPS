@@ -25,8 +25,5 @@ ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 /bin/sed -i "s#REPLACEBYSUBFOLDER#$ARGV3#"                    $ARGV5/data/plugins/$ARGV3/apcupsd.conf
 /bin/sed -i "s#REPLACEBYDATADIR#$ARGV5/data/plugins/$ARGV3/#" $ARGV5/data/plugins/$ARGV3/apccontrol
 
-/bin/sed -i "s#REPLACEBYSUBFOLDER#$ARGV3#"                    /tmp/uploads/$ARGV1/postroot.sh
-/bin/sed -i "s#REPLACEBYBASEFOLDER#$ARGV5#"                   /tmp/uploads/$ARGV1/postroot.sh
-
 # Exit with Status 0
 exit 0
