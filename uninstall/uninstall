@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Removing APC UPS Daemon"
-apt-get remove apcupsd
+sudo apt-get remove apcupsd
 echo "Packages sendemail and policykit-1 will be kept and must be removed manually if needed using the commands below:"
 echo "apt-get remove sendemail"
 echo "apt-get remove policykit-1"
