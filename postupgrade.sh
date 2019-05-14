@@ -8,9 +8,6 @@ ARGV4=$4 # Forth argument is Plugin version
 ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 shopt -s dotglob
 
-echo "<INFO> Moving back existing config files"
-mv -v /tmp/$ARGV1\_upgrade/config/* $ARGV5/config/plugins/$ARGV3/
-
 echo "<INFO> Moving back existing scripts"
 mv -v /tmp/$ARGV1\_upgrade/data/* $ARGV5/data/plugins/$ARGV3/ 
 

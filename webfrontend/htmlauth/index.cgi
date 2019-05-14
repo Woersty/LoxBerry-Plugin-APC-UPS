@@ -25,7 +25,6 @@ use LoxBerry::Web;
 use LoxBerry::Log;
 use CGI::Carp qw(fatalsToBrowser);
 use CGI qw/:standard/;
-use Config::Simple '-strict';
 use HTML::Entities;
 #use Cwd 'abs_path';
 use warnings;
@@ -37,7 +36,6 @@ require Time::Piece;
 ##########################################################################
 # Variables
 ##########################################################################
-my %Config;
 my $languagefile				= "language.ini";
 my $maintemplatefilename 		= "settings.html";
 my $helptemplatefilename		= "help.html";

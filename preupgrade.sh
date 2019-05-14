@@ -8,13 +8,9 @@ ARGV4=$4 # Forth argument is Plugin version
 ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 
 echo "<INFO> Creating temporary folders for upgrading"
-mkdir -p /tmp/$ARGV1\_upgrade/config
 mkdir -p /tmp/$ARGV1\_upgrade/log
 mkdir -p /tmp/$ARGV1\_upgrade/data
 shopt -s dotglob
-
-echo "<INFO> Backing up existing config files"
-mv -v $ARGV5/config/plugins/$ARGV3/* /tmp/$ARGV1\_upgrade/config/
 
 echo "<INFO> Backing up existing scripts"
 mv -v $ARGV5/data/plugins/$ARGV3/* /tmp/$ARGV1\_upgrade/data/
