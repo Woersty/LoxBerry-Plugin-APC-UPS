@@ -1,0 +1,28 @@
+<CENTER>
+	<IMG src="<TMPL_VAR LOGO_ICON>">
+	<BR>
+	<b><TMPL_VAR APC_UPS.MY_NAME></b>
+	<BR>
+	<BR>
+	<a id="btnback" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="../../"><TMPL_VAR APC_UPS.UI_BTN_BACK></a>
+ </CENTER>
+<BR>
+<DIV id="notifblock">
+	<!-- NOTIFICATIONS //-->
+		<TMPL_VAR NOTIFICATIONS>
+	<!-- NOTIFICATIONS //-->
+</DIV>
+<center>
+	<a target="APC-UPS" href="<TMPL_VAR HTMLPATH>"><TMPL_VAR APC_UPS.UI_BTN_PLUGIN_PAGE></a>
+	<br/><br/>
+	<table class="formtable" style="border:solid black 1px; border-radius:6px; -moz-border-radius:6px; background-color: #cfffcf;">
+		<tr>
+			<td>
+				<div style="cursor:default; font-size:1.5em; font-family: monospace;" id="ups_div">
+					<nobr><TMPL_VAR UPS_PARAMS></nobr>
+				</div>
+			</td>
+		</tr>
+	</table>
+</center>
+<small><small><TMPL_VAR VERSION></small></small>
