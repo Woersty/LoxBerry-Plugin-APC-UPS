@@ -1,5 +1,5 @@
 <?php
-// LoxBerry Miniserverbackup Plugin
+// LoxBerry APC-UPS Plugin
 // Christian Woerstenfeld - git@loxberry.woerstenfeld.de
 
 // Calculate running time
@@ -11,21 +11,26 @@ chdir(dirname($_SERVER['PHP_SELF']));
 // Include System Lib
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
+
+// Load language
 $L = LBSystem::readlanguage("language.ini");
+
+// Load plugin data
 $plugindata = LBSystem::plugindata();
 
-// Configure Logfile path 
-$logfilename	= LBPLOGDIR."/apc_ups_".date("Y-m-d_H\hi\ms\s",time()).".log";
-$params = [
-    "name" => $L["LOGGING.LOG_GROUPNAME_PLUGIN"],
-    "filename" => $logfilename,
-    "addtime" => 1];
-$log = LBLog::newLog ($params);
-// Configure error handling 
-ini_set("display_errors", false);      	// Do not display in browser			
-ini_set("error_log", $logfilename);		// Pass errors to logfile
-ini_set("log_errors", 1);				// Log errors
+// Configure + Init Logfile
+$logfilename			= 	LBPLOGDIR."/apc_ups_".date("Y-m-d_H\hi\ms\s",time()).".log";
+$params = [ "name" 		=> 	$L["LOGGING.LOG_GROUPNAME_PLUGIN"],
+			"filename" 	=> 	$logfilename,
+    		"addtime" 	=> 	1];
+$log 	= LBLog::newLog ($params);
 
+// Configure error handling 
+ini_set("display_errors", false);      		// Do not display in browser			
+ini_set("error_log"		, $logfilename);	// Pass errors to logfile
+ini_set("log_errors"	, 1);				// Log errors
+
+// Debug / Log function
 function debug($line,$message = "", $loglevel = 7)
 {
 	global $L,$plugindata,$logfilename;
@@ -36,7 +41,6 @@ function debug($line,$message = "", $loglevel = 7)
 		if ( $plugindata['PLUGINDB_LOGLEVEL'] == 7 && $L["ERRORS.LINE"] != "" ) $message .= " ".$L["ERRORS.LINE"]." ".$line;
 		if ( isset($message) && $message != "" ) 
 		{
-
 			switch ($loglevel)
 			{
 			    case 0:
@@ -94,13 +98,15 @@ function debug($line,$message = "", $loglevel = 7)
 	return;
 }
 
+// Start logging
 LOGSTART ("");
 $message = $L["LOGGING.LOG_PLUGIN_CALLED"];
 $log->LOGTITLE($message);
 
-// Read language info
+// Language info for Log
 debug(__line__,count($L)." ".$L["LOGGING.LOG_LANGUAGE_STRINGS_READ"],6);
 
+// Read UPS data
 @exec('/sbin/apcaccess status 2>&1',$result,$retval);
 
 // Build XML page body
@@ -110,7 +116,7 @@ echo "<root>\n";
 echo " <timestamp>".time()."</timestamp>\n";
 echo " <date_RFC822>".date(DATE_RFC822)."</date_RFC822>\n";
 
-// If no data was read, exit
+// If ok, parse data - else exit and close XML
 if ( $retval != 0 )  
 {
 	$message = $L["ERRORS.ERR01_XML_NO_DATA"];
@@ -132,7 +138,7 @@ else
 	debug(__line__,join("\n",$result));
 }
 
-// Loop trough each parameter
+// Loop through each parameter
 $output = " <UPS>\n";
 foreach ($result as $lines) 
 {
@@ -156,7 +162,11 @@ else
 {
 	debug(__line__,$message,5);
 }
+
+// Send XML data to requester
 echo $output;
+
+// Plugin finished
 $message = $L["LOGGING.LOG_PLUGIN_FINISHED"];
 $log->LOGTITLE($message);
 LOGOK ($message);
