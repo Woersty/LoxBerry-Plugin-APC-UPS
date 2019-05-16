@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-# This shell script if placed in /etc/apcupsd
-# will be called by /etc/apcupsd/apccontrol before
-# apcupsd kills the power in the UPS. You probably
-# need to edit this to mount read-only /usr and /var,
-# otherwise apcupsd will not run.
+# This shell script will be called by REPLACELBPDATADIR/apccontrol before
+# apcupsd kills the power in the UPS. You probably need to edit this to 
+# mount read-only /usr and /var, otherwise apcupsd will not run.
+
+php -f REPLACELBPHTMLDIR/email.php `basename "$0"` `hostname` $1
 
 # Choose one of this solution
 #mount -n -o ro /usr
