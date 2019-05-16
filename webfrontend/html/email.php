@@ -263,6 +263,7 @@ Content-Disposition: ".$inline."; filename=\"logo_".$datetime->format("Y-m-d_i\h
 		else
 		{
 			debug(__line__,$L["LOGGING.SEND_MAIL_OK"],5);
+			LOGOK ("");
 		}
 	}		
 }
