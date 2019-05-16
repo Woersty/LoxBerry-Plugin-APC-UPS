@@ -85,9 +85,9 @@ function debug($line,$message = "", $loglevel = 7)
 	return;
 }
 
-$mailtext=$L["SCRIPTS.unknown"];
+$scriptname = "";
+$mailtext=str_ireplace("<scriptname>",$scriptname,$L["SCRIPTS.unknown"]);
 $emoji = "=E2=9D=93"; # Red ?
-$scriptname = $L["SCRIPTS.unknown"];
 if (isset($argv[1])) 
 {
 	$scriptname = "$argv[1]";
