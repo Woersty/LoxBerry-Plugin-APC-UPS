@@ -14,6 +14,10 @@ shopt -s dotglob
 
 echo "<INFO> Backing up existing scripts"
 mv -v $ARGV5/data/plugins/$ARGV3/* /tmp/$ARGV1\_upgrade/data/
+rm -f /tmp/$ARGV1\_upgrade/data/old_scripts.tgz 2>/dev/null
+cd /tmp/$ARGV1\_upgrade/data/
+tar -czvf /tmp/$ARGV1\_upgrade/data/old_scripts.tgz *
+cd
 
 echo "<INFO> Backing up existing log files"
 mv -v $ARGV5/log/plugins/$ARGV3/* /tmp/$ARGV1\_upgrade/log/
