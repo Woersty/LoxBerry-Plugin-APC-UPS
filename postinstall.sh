@@ -22,7 +22,9 @@ ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 /bin/sed -i "s#REPLACEBYBASEFOLDER#$ARGV5#"                   $ARGV5/data/plugins/$ARGV3/apcupsd.conf
 /bin/sed -i "s#REPLACEBYSUBFOLDER#$ARGV3#"                    $ARGV5/data/plugins/$ARGV3/apcupsd.conf
 /bin/sed -i "s#REPLACEBYDATADIR#$ARGV5/data/plugins/$ARGV3#"  $ARGV5/data/plugins/$ARGV3/apccontrol
-chmod +x $ARGV5/data/plugins/$ARGV3/apccontrol
+chmod +x $ARGV5/data/plugins/$ARGV3/*
+chmod -x $ARGV5/data/plugins/$ARGV3/*.conf
+chmod -x $ARGV5/data/plugins/$ARGV3/*.tgz 2>/dev/null
 
 # Exit with Status 0
 exit 0

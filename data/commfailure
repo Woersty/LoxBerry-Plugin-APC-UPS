@@ -6,4 +6,4 @@
 
 php -f REPLACELBPHTMLDIR/email.php `basename "$0"` `hostname` $1
 
-exit 0
+exit 99

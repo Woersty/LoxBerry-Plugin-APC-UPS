@@ -7,17 +7,7 @@
 php -f REPLACELBPHTMLDIR/email.php `basename "$0"` `hostname` $1
 
 # Choose one of this solution
-#mount -n -o ro /usr
-#mount -n -o ro /var
-#
-#mount | awk '/ext2/ { print $3 }' | while read line; do
-#	mount -n -o ro,remount $line
-#done
-#mount | awk '/ext3/ { print $3 }' | while read line; do
-#	mount -n -o ro,remount $line
-#done
-#mount | awk '/reiserfs/ { print $3 }' | while read line; do
-#	mount -n -o ro,remount $line
-#done
+mount -n -o ro /usr
+mount -n -o ro /var
 
 exit 0
