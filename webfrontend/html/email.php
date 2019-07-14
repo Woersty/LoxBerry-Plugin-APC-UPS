@@ -91,6 +91,8 @@ $emoji = "=E2=9D=93"; # Red ?
 if (isset($argv[1])) 
 {
 	$scriptname = "$argv[1]";
+	if ( !isset($argv[2]) ) $argv[2] = "";
+	if ( !isset($argv[3]) ) $argv[3] = "";
     $log_scriptname = str_ireplace("<scriptname>",$scriptname,$L["SCRIPTS.unknown"]);
 	switch ($scriptname)
 			{
@@ -179,11 +181,9 @@ if ( !isset($mail_cfg) )
 else
 {
 	debug(__line__,$L["LOGGING.MAIL_CONFIG_OK"]." [".$mail_cfg['SMTP']['SMTPSERVER'].":".$mail_cfg['SMTP']['PORT']."]",6);
-	if ( $mail_cfg['SMTP']['ISCONFIGURED'] == "0" )
-	{
-		debug(__line__,$L["LOGGING.MAIL_NOT_CONFIGURED"],5);
-	}
-	else
+	if ( !isset($mail_cfg['SMTP']['ISCONFIGURED']) ) $mail_cfg['SMTP']['ISCONFIGURED'] = 0;
+	if ( !isset($mail_cfg['SMTP']['ACTIVATE_MAIL']) ) $mail_cfg['SMTP']['ACTIVATE_MAIL'] = 0;
+	if ( $mail_cfg['SMTP']['ISCONFIGURED'] == "1" or $mail_cfg['SMTP']['ACTIVATE_MAIL'] == "1" )
 	{
 		$datetime    = new DateTime;
 		$datetime->getTimestamp();
@@ -273,7 +273,11 @@ Content-Disposition: ".$inline."; filename=\"logo_".$datetime->format("Y-m-d_i\h
 		}
    		debug(__line__,"".htmlspecialchars(join("\n",$resultarray)),7);
 		unlink($tmpfname) or debug(__line__,$L["ERRORS.ERR05_DEL_MAIL_TMP_FILE"]." ".$tmpfname,4);
-	}		
+	}
+	else
+	{
+		debug(__line__,$L["LOGGING.MAIL_NOT_CONFIGURED"],5);
+	}
 }
 LOGEND (" ");
 exit;
