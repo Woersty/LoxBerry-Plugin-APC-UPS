@@ -50,8 +50,10 @@ $LoxBerry::System::DEBUG 	= 1 if $plugin->{PLUGINDB_LOGLEVEL} eq 7;
 $LoxBerry::Web::DEBUG 		= 1 if $plugin->{PLUGINDB_LOGLEVEL} eq 7;
 $log->loglevel($plugin->{PLUGINDB_LOGLEVEL});
 
+my %L = LoxBerry::System::readlanguage($languagefile);
+
 # Start Logfile
-LOGSTART "";
+LOGSTART $L{'APC_UPS.MY_NAME'};
 LOGOK    "Version: ".$version if $plugin->{PLUGINDB_LOGLEVEL} ge 5;
 LOGDEB   "Language is: " . $lang;
 
@@ -65,7 +67,7 @@ my $maintemplate = HTML::Template->new(
 	debug => 1 );
 
 # Read language
-my %L = LoxBerry::System::readlanguage($maintemplate, $languagefile);
+%L = LoxBerry::System::readlanguage($maintemplate, $languagefile);
 
 # Check notifications
 LOGDEB "Check for pending notifications for: " . $lbpplugindir . " " . $L{'APC_UPS.MY_NAME'};
