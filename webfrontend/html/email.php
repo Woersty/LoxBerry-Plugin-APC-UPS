@@ -14,7 +14,7 @@ $params = [
     "addtime" => 1];
     
 $log = LBLog::newLog ($params);
-LOGSTART ("");
+LOGSTART ($L["LOGGING.LOG_MAIL_START_TEXT"]);
 
 // Error Reporting 
 error_reporting(E_ALL);     
