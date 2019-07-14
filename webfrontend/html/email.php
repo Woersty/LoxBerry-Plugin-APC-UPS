@@ -91,18 +91,21 @@ $emoji = "=E2=9D=93"; # Red ?
 if (isset($argv[1])) 
 {
 	$scriptname = "$argv[1]";
+    $log_scriptname = str_ireplace("<scriptname>",$scriptname,$L["SCRIPTS.unknown"]);
 	switch ($scriptname)
 			{
 			    case 'commfailure':
 			    case 'killpower':
 					$emoji = "=E2=9D=8C"; # Fail X
 		        	$mailtext=str_ireplace("<host>","$argv[2]",str_ireplace("<UPS>","$argv[3]",$L["SCRIPTS.$scriptname"]));
+		        	$log_scriptname = $scriptname;
 		        	break;
 
 			    case 'offbattery':
 			    case 'commok':
 					$emoji = "=E2=9C=85"; # OK V
 		        	$mailtext=str_ireplace("<host>","$argv[2]",str_ireplace("<UPS>","$argv[3]",$L["SCRIPTS.$scriptname"]));
+		        	$log_scriptname = $scriptname;
 		    	    break;
 
 			    case 'changeme':
@@ -115,11 +118,13 @@ if (isset($argv[1]))
 						debug(__line__,$statustext);
 						$mailtext .= $statustext;
 					}
+					$log_scriptname = $scriptname;
 			        break;
 
 			    case 'onbattery':
 					$emoji = "=E2=9D=97"; # Red !
 		        	$mailtext=str_ireplace("<host>","$argv[2]",str_ireplace("<UPS>","$argv[3]",$L["SCRIPTS.$scriptname"]));
+		        	$log_scriptname = $scriptname;
 			        break;
 
 				case 'powerout':
@@ -139,6 +144,7 @@ if (isset($argv[1]))
 				case 'battattach':
 				    $emoji = "=E2=9D=94"; # White ?
 				    $mailtext=str_ireplace("<scriptname>",$scriptname,$L["SCRIPTS.not_yet_supported"]);
+				    $log_scriptname = $L["SCRIPTS.not_yet_supported"];
 			        break;
 
 			    default:
@@ -254,18 +260,20 @@ Content-Disposition: ".$inline."; filename=\"logo_".$datetime->format("Y-m-d_i\h
 		fwrite($handle, $html) or debug(__line__,$L["ERRORS.ERR04_WRITE_MAIL_TMP_FILE"]." ".$tmpfname,4);
 		fclose($handle);
 		@exec("/usr/sbin/sendmail -v -t 2>&1 < $tmpfname ",$resultarray,$retval);
-		unlink($tmpfname) or debug(__line__,$L["ERRORS.ERR05_DEL_MAIL_TMP_FILE"]." ".$tmpfname,4);
-		debug(__line__,"Sendmail:\n".htmlspecialchars(join("\n",$resultarray)),7);
-		if($retval)
+		$result = preg_grep( "/sendmail\:/i" , $resultarray );
+		if($retval != 0 || count($result) > 0 )
 		{
-			debug(__line__,$L["ERRORS.ERR06_ERR_SEND_MAIL"]." ".array_pop($resultarray),3);
+			debug(__line__,$L["ERRORS.ERR06_ERR_SEND_MAIL"],3);
+			$log->LOGTITLE($L["ERRORS.ERR06_ERR_SEND_MAIL"]." [".$argv[3]."@".$argv[2]."=>".$log_scriptname."]");
 		}
 		else
 		{
 			debug(__line__,$L["LOGGING.SEND_MAIL_OK"],5);
-			LOGOK ("");
+			$log->LOGTITLE($L["LOGGING.SEND_MAIL_OK"]." [".$argv[3]."@".$argv[2]."=>".$log_scriptname."]");
 		}
+   		debug(__line__,"".htmlspecialchars(join("\n",$resultarray)),7);
+		unlink($tmpfname) or debug(__line__,$L["ERRORS.ERR05_DEL_MAIL_TMP_FILE"]." ".$tmpfname,4);
 	}		
 }
-LOGEND ("");
+LOGEND (" ");
 exit;
