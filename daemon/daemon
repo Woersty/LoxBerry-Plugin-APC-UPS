@@ -23,6 +23,7 @@ done
 /bin/sed -i "s#ISCONFIGURED=no#ISCONFIGURED=yes#" /etc/default/apcupsd
 /bin/sed -i "s#/etc/apcupsd/powerfail#REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/powerfail#" /etc/init.d/apcupsd
 /bin/sed -i "s#DEVICE.*#DEVICE#g" /etc/apcupsd/apcupsd.conf
+/bin/sed -i "s#NISIP.*#NISIP 0.0.0.0#g" /etc/apcupsd/apcupsd.conf
 
 systemctl daemon-reload
 /etc/init.d/apcupsd restart
