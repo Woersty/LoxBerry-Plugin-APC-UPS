@@ -1,0 +1,83 @@
+#!/bin/bash
+echo "Checks UPS Status"  # Title
+ 
+if [ "$1" == "title" ]; then
+    exit
+fi
+
+STATUS=`apcaccess |grep STATUS|cut -d: -f2|xargs|cut -d" " -f2`
+
+case $STATUS in
+
+  "ONLINE")
+	echo "5"  				
+	TIMELEFT=`apcaccess |grep TIMELEFT |cut -d: -f2|xargs|cut -d" " -f1|cut -d\. -f1`
+	BCHARGE=`apcaccess |grep BCHARGE	|cut -d: -f2|xargs|cut -d" " -f1 `
+	echo "UPS is online. $TIMELEFT minutes left. Battery $BCHARGE %"   
+    exit
+    ;;
+
+  "ONBATT")
+	echo "4"  				  
+	BCHARGE=`apcaccess |grep BCHARGE	|cut -d: -f2|xargs|cut -d" " -f1 `
+	echo "UPS is on Battery. Battery $BCHARGE %" 
+    exit
+    ;;
+
+  "CAL")
+  "TRIM")
+  "BOOST")
+  "SLAVE")
+  "SLAVEDOWN")
+	echo "6"  		  	   
+	echo "UPS Status is $STATUS." 
+    exit
+    ;;
+
+  "SHUTTING")
+	echo "3"  			         
+	echo "UPS is shutting down." 
+    exit
+    ;;
+
+  "LOWBATT")
+	echo "3"  			          
+	BCHARGE=`apcaccess |grep BCHARGE	|cut -d: -f2|xargs|cut -d" " -f1 `
+	echo "UPS charge is low. Battery $BCHARGE %"
+
+    exit
+    ;;
+
+  "OVERLOAD")
+	echo "4"  			      
+	echo "UPS is overloaded." 
+    exit
+    ;;
+
+  "REPLACEBATT")
+	echo "4"
+	BATTDATE=`apcaccess |grep BATTDATE |cut -d: -f2|xargs`
+	echo "UPS Battery needs replacement. Battery date: $BATTDATE" 
+    exit
+    ;;
+
+  "NOBATT")
+	echo "3"  			    
+	echo "UPS battery missing." 
+    exit
+    ;;
+
+  "COMMLOST")
+	echo "3"  				      
+	echo "UPS communication lost." 
+    exit
+    ;;
+
+  *)
+	echo "0"  				   
+	echo "Status is $STATUS."  
+    exit
+    ;;
+esac
+ 
+exit
