@@ -24,11 +24,7 @@ case $STATUS in
     exit
     ;;
 
-  "CAL")
-  "TRIM")
-  "BOOST")
-  "SLAVE")
-  "SLAVEDOWN")
+  "CAL"|"TRIM"|"BOOST"|"SLAVE"|"SLAVEDOWN")
 	echo "6"  		  	   
 	echo "UPS Status is $STATUS." 
     exit
