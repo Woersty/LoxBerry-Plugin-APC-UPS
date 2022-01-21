@@ -53,7 +53,7 @@ if [ -f $SCRIPTDIR/config ]; then . $SCRIPTDIR/config ; fi
 #
 if [ -f ${SCRIPTDIR}/${1} -a -x ${SCRIPTDIR}/${1} ]
 then
-    ${SCRIPTDIR}/${1} ${2} ${3} ${4}
+    su - loxberry -c "${SCRIPTDIR}/${1} ${2} ${3} ${4}"
     # exit code 99 means he does not want us to do default action
     if [ $? = 99 ] ; then
 	exit 0
