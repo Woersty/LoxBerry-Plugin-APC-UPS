@@ -30,10 +30,15 @@ ini_set("display_errors", false);      		// Do not display in browser
 ini_set("error_log"		, $logfilename);	// Pass errors to logfile
 ini_set("log_errors"	, 1);				// Log errors
 
+// Sammelt Meldungen ab Loglevel 4. Muss angelegt sein, bevor debug() das
+// erste Mal etwas hineinschreibt - sonst ist array_push() unter PHP 8 ein
+// fataler TypeError ("must be of type array, null given").
+$summary = array();
+
 // Debug / Log function
 function debug($line,$message = "", $loglevel = 7)
 {
-	global $L,$plugindata,$logfilename;
+	global $L,$plugindata,$logfilename,$summary;
 	if ( $plugindata['PLUGINDB_LOGLEVEL'] >= intval($loglevel) )  
 	{
 		$message = preg_replace('/["]/','',$message); // Remove quotes => https://github.com/mschlenstedt/Loxberry/issues/655
@@ -107,7 +112,10 @@ $log->LOGTITLE($message);
 debug(__line__,count($L)." ".$L["LOGGING.LOG_LANGUAGE_STRINGS_READ"],6);
 
 // Read UPS data
-@exec('/sbin/apcaccess status 2>&1',$result,$retval);
+// apcaccess liegt je nach Debian-Fassung unter /sbin oder /usr/sbin.
+$apcaccess = trim(shell_exec('command -v apcaccess 2>/dev/null'));
+if ($apcaccess == '') { $apcaccess = '/sbin/apcaccess'; }
+@exec(escapeshellarg($apcaccess).' status 2>&1',$result,$retval);
 
 // Build XML page body
 header("Content-type: text/xml");
