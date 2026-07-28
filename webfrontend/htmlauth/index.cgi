@@ -86,7 +86,11 @@ my @ups_params;
 my $ups_params_list;
 
 # Read data from UPS
-@ups_params =split(/\n/,`/sbin/apcaccess status 2>&1`);
+# apcaccess liegt je nach Debian-Fassung unter /sbin oder /usr/sbin.
+my $apcaccess = `command -v apcaccess 2>/dev/null`;
+chomp $apcaccess;
+$apcaccess = '/sbin/apcaccess' if !$apcaccess;
+@ups_params =split(/\n/,`$apcaccess status 2>&1`);
 
 # Parse data (just for view on admin page)
 foreach (@ups_params)
