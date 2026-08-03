@@ -1,9 +1,0 @@
-#!/bin/sh
-#
-# This shell script will be called by REPLACELBPDATADIR/apccontrol when the    
-# UPS goes back on to the mains after a power failure.
-#
-
-php -f REPLACELBPHTMLDIR/email.php `basename "$0"` `hostname` $1
-
-exit 99

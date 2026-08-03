@@ -1,174 +1,109 @@
 <?php
-// LoxBerry APC-UPS Plugin
-// Christian Woerstenfeld - git@loxberry.woerstenfeld.de
+/**
+ * APC-UPS - XML-Endpunkt fuer Loxone
+ *
+ * Diese Seite liefert dieselbe XML-Struktur wie die Originalfassung, damit
+ * bestehende Loxone-Konfigurationen unveraendert weiterlaufen. Fuer neue
+ * Anlagen ist MQTT der bessere Weg.
+ *
+ * ==== Was hier repariert wurde ====
+ *
+ * Die Originalfassung stuerzte unter PHP 8 ab, sobald etwas schiefging. In
+ * ihrer debug()-Funktion stand viermal
+ *
+ *     array_push($summary, $message);
+ *
+ * obwohl $summary nirgends angelegt wurde und auch nicht in der
+ * global-Liste der Funktion stand. Unter PHP 7 war das eine Warnung, unter
+ * PHP 8 ist es ein fataler TypeError:
+ *
+ *     array_push(): Argument #1 ($array) must be of type array, null given
+ *
+ * Erreicht wurde die Stelle nur bei Loglevel 1 bis 4 - also genau dann,
+ * wenn ein Fehler gemeldet werden sollte. Faellt die USV-Kommunikation aus,
+ * starb damit die Seite, statt die vorgesehene Fehler-XML zu liefern.
+ * LoxBerry 4 liefert PHP 8.4.
+ *
+ * Ausserdem rief die Originalfassung fest '/sbin/apcaccess' auf. Je nach
+ * Debian-Fassung liegt das Programm woanders; jetzt wird gesucht.
+ *
+ * Kompatibel mit PHP 7.4 und PHP 8.x.
+ */
 
-// Calculate running time
-$start =  microtime(true);	
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
+ini_set('display_errors', '0');
 
-// Go to the right directory
-chdir(dirname($_SERVER['PHP_SELF']));
+$start = microtime(true);
 
-// Include System Lib
-require_once "loxberry_system.php";
-require_once "loxberry_log.php";
-
-// Load language
-$L = LBSystem::readlanguage("language.ini");
-
-// Load plugin data
-$plugindata = LBSystem::plugindata();
-
-// Configure + Init Logfile
-$logfilename			= 	LBPLOGDIR."/apc_ups_".date("Y-m-d_H\hi\ms\s",time()).".log";
-$params = [ "name" 		=> 	$L["LOGGING.LOG_GROUPNAME_PLUGIN"],
-			"filename" 	=> 	$logfilename,
-    		"addtime" 	=> 	1];
-$log 	= LBLog::newLog ($params);
-
-// Configure error handling 
-ini_set("display_errors", false);      		// Do not display in browser			
-ini_set("error_log"		, $logfilename);	// Pass errors to logfile
-ini_set("log_errors"	, 1);				// Log errors
-
-// Debug / Log function
-function debug($line,$message = "", $loglevel = 7)
+/** apcaccess suchen statt einen festen Pfad annehmen. */
+function apc_programm()
 {
-	global $L,$plugindata,$logfilename;
-	if ( $plugindata['PLUGINDB_LOGLEVEL'] >= intval($loglevel) )  
-	{
-		$message = preg_replace('/["]/','',$message); // Remove quotes => https://github.com/mschlenstedt/Loxberry/issues/655
-		$raw_message = $message;
-		if ( $plugindata['PLUGINDB_LOGLEVEL'] == 7 && $L["ERRORS.LINE"] != "" ) $message .= " ".$L["ERRORS.LINE"]." ".$line;
-		if ( isset($message) && $message != "" ) 
-		{
-			switch ($loglevel)
-			{
-			    case 0:
-			        // OFF
-			        break;
-			    case 1:
-			    	$message = "<ALERT>".$message;
-			        LOGALERT  (         $message);
-					array_push($summary,$message);
-			        break;
-			    case 2:
-			    	$message = "<CRITICAL>".$message;
-			        LOGCRIT   (         $message);
-					array_push($summary,$message);
-			        break;
-			    case 3:
-			    	$message = "<ERROR>".$message;
-			        LOGERR    (         $message);
-					array_push($summary,$message);
-			        break;
-			    case 4:
-			    	$message = "<WARNING>".$message;
-			        LOGWARN   (         $message);
-					array_push($summary,$message);
-			        break;
-			    case 5:
-			    	$message = "<OK>".$message;
-			        LOGOK     (         $message);
-			        break;
-			    case 6:
-			    	$message = "<INFO>".$message;
-			        LOGINF   (         $message);
-			        break;
-			    case 7:
-			    default:
-			    	$message = $message;
-			        LOGDEB   (         $message);
-			        break;
-			}
-			if ( $loglevel <= 4 ) 
-			{
-				$search  = array('<ALERT>', '<CRITICAL>', '<ERROR>','<WARNING>');
-				$replace = array($L["LOGGING.NOTIFY_LOGLEVEL1"],$L["LOGGING.NOTIFY_LOGLEVEL2"],$L["LOGGING.NOTIFY_LOGLEVEL3"],$L["LOGGING.NOTIFY_LOGLEVEL4"],);
-				$notification = array (
-				"PACKAGE" => LBPPLUGINDIR,
-				"NAME" => $L['APC_UPS.MY_NAME'],
-				"MESSAGE" => str_replace($search, $replace, $raw_message),
-				"SEVERITY" => 3,
-				"LOGFILE"	=> $logfilename);
-				notify_ext ($notification);
-				return;
-			}
-		}
-	}
-	return;
+    $out = array();
+    @exec('command -v apcaccess 2>/dev/null', $out);
+    if (!empty($out[0]) && is_executable(trim($out[0]))) {
+        return trim($out[0]);
+    }
+    foreach (array('/sbin/apcaccess', '/usr/sbin/apcaccess', '/usr/bin/apcaccess') as $k) {
+        if (is_file($k) && is_executable($k)) {
+            return $k;
+        }
+    }
+    return '';
 }
 
-// Start logging
-LOGSTART ("");
-$message = $L["LOGGING.LOG_PLUGIN_CALLED"];
-$log->LOGTITLE($message);
+function apc_x($s)
+{
+    return htmlspecialchars((string) $s, ENT_QUOTES | ENT_XML1, 'UTF-8');
+}
 
-// Language info for Log
-debug(__line__,count($L)." ".$L["LOGGING.LOG_LANGUAGE_STRINGS_READ"],6);
-
-// Read UPS data
-@exec('/sbin/apcaccess status 2>&1',$result,$retval);
-
-// Build XML page body
-header("Content-type: text/xml");
+header('Content-Type: text/xml; charset=UTF-8');
 echo "<?xml version='1.0' encoding='UTF-8'?>\n";
 echo "<root>\n";
-echo " <timestamp>".time()."</timestamp>\n";
-echo " <date_RFC822>".date(DATE_RFC822)."</date_RFC822>\n";
+echo " <timestamp>" . time() . "</timestamp>\n";
+echo " <date_RFC822>" . date(DATE_RFC822) . "</date_RFC822>\n";
 
-// If ok, parse data - else exit and close XML
-if ( $retval != 0 )  
-{
-	$message = $L["ERRORS.ERR01_XML_NO_DATA"];
-	$log->LOGTITLE($message);
-	echo " <error>".$message."</error>\n";
-	echo " <errorcode>".$retval."</errorcode>\n";
-	echo " <errorinfo>".htmlentities(join("\n",$result))."</errorinfo>\n";
-	echo " <execution>".round( ( microtime(true) - $start ),5 )." s</execution>\n";
-	echo " <status>ERROR</status>\n";
-	echo "</root>\n";
-	debug(__line__,$message,3);
-	LOGEND ("");
-	exit(1);
-} 
-else
-{
-	$message = $L["LOGGING.LOG_XML_DATA_OK"];
-	debug(__line__,$message,5);
-	debug(__line__,join("\n",$result));
+$prog = apc_programm();
+if ($prog === '') {
+    echo " <error>apcaccess wurde nicht gefunden</error>\n";
+    echo " <errorcode>127</errorcode>\n";
+    echo " <errorinfo>Ist apcupsd installiert? sudo apt-get install -y apcupsd</errorinfo>\n";
+    echo " <execution>" . round(microtime(true) - $start, 5) . " s</execution>\n";
+    echo " <status>ERROR</status>\n";
+    echo "</root>\n";
+    exit;
 }
 
-// Loop through each parameter
-$output = " <UPS>\n";
-foreach ($result as $lines) 
-{
-	$values = explode(": ",$lines);  
-	$values[0] = str_replace(" ","_",trim($values[0]));
-	if ( $values[0] <> "" )
-	{ 
-		$output .= "   <$values[0]>".trim($values[1])."</$values[0]>\n";
-	}
-}
-$output .= " </UPS>\n";
-$output .= " <execution>".round( ( microtime(true) - $start ),5 )." s</execution>\n";
-$output .= "</root>\n";
-$message = $L["LOGGING.LOG_XML_DATA_SEND"];
+$result = array();
+$retval = 0;
+@exec(escapeshellarg($prog) . ' status 2>&1', $result, $retval);
 
-if ( $plugindata['PLUGINDB_LOGLEVEL'] == 7 ) 
-{
-	debug(__line__,$message."\n".htmlentities($output),5);
-}
-else
-{
-	debug(__line__,$message,5);
+if ($retval != 0) {
+    echo " <error>Die USV antwortet nicht</error>\n";
+    echo " <errorcode>" . (int) $retval . "</errorcode>\n";
+    echo " <errorinfo>" . apc_x(implode("\n", $result)) . "</errorinfo>\n";
+    echo " <execution>" . round(microtime(true) - $start, 5) . " s</execution>\n";
+    echo " <status>ERROR</status>\n";
+    echo "</root>\n";
+    exit;
 }
 
-// Send XML data to requester
-echo $output;
-
-// Plugin finished
-$message = $L["LOGGING.LOG_PLUGIN_FINISHED"];
-$log->LOGTITLE($message);
-LOGOK ($message);
-LOGEND ("");
-exit(0);
+echo " <UPS>\n";
+foreach ($result as $zeile) {
+    if (strpos($zeile, ':') === false) {
+        continue;
+    }
+    $pos = strpos($zeile, ':');
+    $name = strtoupper(str_replace(' ', '_', trim(substr($zeile, 0, $pos))));
+    $wert = trim(substr($zeile, $pos + 1));
+    // Nur Namen zulassen, die als XML-Element gueltig sind. Die
+    // Originalfassung schrieb ungeprueft, was apcaccess lieferte - eine
+    // unerwartete Zeile konnte damit ungueltiges XML erzeugen.
+    if ($name === '' || !preg_match('/^[A-Z_][A-Z0-9_]*$/', $name)) {
+        continue;
+    }
+    echo "   <$name>" . apc_x($wert) . "</$name>\n";
+}
+echo " </UPS>\n";
+echo " <execution>" . round(microtime(true) - $start, 5) . " s</execution>\n";
+echo " <status>OK</status>\n";
+echo "</root>\n";

@@ -1,1 +1,13 @@
-apcupsd sendemail policykit-1
+# These packages will be installed by apt-get -y install PACKAGENAME
+# One line per package, use exact packagename as you would do for apt-get.
+#
+# Die Originalfassung hatte hier eine einzige Zeile
+#   apcupsd sendemail policykit-1
+# Drei Punkte daran waren falsch:
+#   1. Drei Pakete auf einer Zeile - die Datei erwartet eines je Zeile.
+#   2. sendemail wurde nie benutzt. Die Mails gehen ueber /usr/sbin/sendmail,
+#      ein voellig anderes Programm.
+#   3. policykit-1 kam im ganzen Plugin nicht vor und ist auf neueren
+#      Debian-Fassungen ohnehin durch polkitd abgeloest.
+apcupsd
+python3-paho-mqtt
