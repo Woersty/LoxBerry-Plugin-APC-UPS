@@ -1,8 +1,15 @@
 #!/bin/bash
+# Wird als Benutzer "root" ausgefuehrt.
 
-echo "Removing APC UPS Daemon"
-sudo apt-get remove apcupsd
-echo "Packages sendemail and policykit-1 will be kept and must be removed manually if needed using the commands below:"
-echo "apt-get remove sendemail"
-echo "apt-get remove policykit-1"
+pkill -f apc_service.py >/dev/null 2>&1
+rm -f /run/shm/apc_ups_status.json /tmp/apc_ups_status.json
+
+# apcupsd wird bewusst NICHT entfernt. Die Originalfassung rief hier
+#   sudo apt-get remove apcupsd
+# ohne -y auf - das haette auf die Rueckfrage gewartet und die
+# Deinstallation haengen lassen. Ausserdem kann apcupsd von anderen Diensten
+# mitbenutzt werden; ein Plugin sollte es nicht ungefragt abraeumen.
+echo "<INFO> apcupsd bleibt installiert und laeuft weiter."
+echo "<INFO> Wer es loswerden will: sudo apt-get remove -y apcupsd"
+
 exit 0

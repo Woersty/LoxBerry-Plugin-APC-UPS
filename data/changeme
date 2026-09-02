@@ -1,9 +1,0 @@
-#!/bin/sh
-#
-# This shell script will be called by REPLACELBPDATADIR/apccontrol when apcupsd
-# detects that the battery should be replaced.
-#
-
-php -f REPLACELBPHTMLDIR/email.php `basename "$0"` `hostname` $1
-
-exit 99

@@ -1,26 +1,27 @@
-#!/bin/bash
+#!/bin/sh
 
-ARGV0=$0 # Zero argument is shell command
-ARGV1=$1 # First argument is temp folder during install
-ARGV2=$2 # Second argument is Plugin-Name for scipts etc.
-ARGV3=$3 # Third argument is Plugin installation folder
-ARGV4=$4 # Forth argument is Plugin version
-ARGV5=$5 # Fifth argument is Base folder of LoxBerry
+# To use important variables from command line use the following code:
+COMMAND=$0    # Zero argument is shell command
+PTEMPDIR=$1   # First argument is temp folder during install
+PSHNAME=$2    # Second argument is Plugin-Name for scipts etc.
+PDIR=$3       # Third argument is Plugin installation folder
+PVERSION=$4   # Forth argument is Plugin version
+#LBHOMEDIR=$5 # Comes from /etc/environment now.
 
-echo "<INFO> Creating temporary folders for upgrading"
-mkdir -p /tmp/$ARGV1\_upgrade/log
-mkdir -p /tmp/$ARGV1\_upgrade/data
-shopt -s dotglob
+PCGI=$LBPCGI/$PDIR
+PHTML=$LBPHTML/$PDIR
+PTEMPL=$LBPTEMPL/$PDIR
+PDATA=$LBPDATA/$PDIR
+PLOG=$LBPLOG/$PDIR
+PCONFIG=$LBPCONFIG/$PDIR
+PSBIN=$LBPSBIN/$PDIR
+PBIN=$LBPBIN/$PDIR
 
-echo "<INFO> Backing up existing scripts"
-mv -v $ARGV5/data/plugins/$ARGV3/* /tmp/$ARGV1\_upgrade/data/
-rm -f /tmp/$ARGV1\_upgrade/data/old_scripts.tgz 2>/dev/null
-cd /tmp/$ARGV1\_upgrade/data/
-tar -czvf /tmp/$ARGV1\_upgrade/data/old_scripts.tgz *
-cd
+echo "<INFO> Backing up existing config files"
+mkdir /tmp/${PDIR}.SAVE
+cp -v -r $PCONFIG/* /tmp/${PDIR}.SAVE/ 2>/dev/null
 
-echo "<INFO> Backing up existing log files"
-mv -v $ARGV5/log/plugins/$ARGV3/* /tmp/$ARGV1\_upgrade/log/
+# Laufenden Dienst anhalten, damit er nicht in die neue Fassung hineinlaeuft.
+pkill -f apc_service.py >/dev/null 2>&1
 
-# Exit with Status 0
 exit 0

@@ -1,31 +1,36 @@
-#!/bin/sh
-### BEGIN INIT INFO
-# Provides:          APC-UPS
-# Required-Start:    $remote_fs $syslog $network 
-# Required-Stop:     $remote_fs $syslog $network
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-### END INIT INFO
+#!/bin/bash
+# Wird beim Systemstart als Benutzer "root" ausgefuehrt.
+# LoxBerry benennt diese Datei bei der Installation in NAME um.
+#
+# Die Originalfassung tat hier deutlich mehr - und deutlich Riskanteres:
+# sie loeschte Dateien in /etc/apcupsd und ersetzte sie durch Symlinks in den
+# Plugin-Ordner, schrieb mit sed in /etc/init.d/apcupsd und
+# /etc/default/apcupsd herum und rief "/etc/init.d/apcupsd restart" auf.
+# Das ist auf einem systemd-System weder noetig noch ungefaehrlich: geht bei
+# der Deinstallation etwas schief, bleibt apcupsd mit toten Symlinks zurueck.
+#
+# Diese Fassung fasst die Systemkonfiguration nicht an. apcupsd wird als
+# ganz normaler Dienst benutzt; das Plugin liest nur mit.
 
-PATH="/sbin:/bin:/usr/sbin:/usr/bin:REPLACEBYBASEFOLDER/bin"
-PATH=$PATH.":REPLACEBYBASEFOLDER/sbin"
+pluginname=REPLACELBPPLUGINDIR
+pluginbindir=REPLACELBPBINDIR
+logdir=REPLACELBPLOGDIR
+log=$logdir/apc_ups.log
 
-. /lib/lsb/init-functions
+if [ -x /usr/bin/logger ]; then
+    /usr/bin/logger "loxberry-plugin-$pluginname - Starte APC-UPS"
+fi
 
+mkdir -p "$logdir" 2>/dev/null
 
-(ls -1 REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/)|while read script; do 
-echo "Replace /etc/apcupsd/$script with Symlink to REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/$script" 
-rm /etc/apcupsd/$script
-ln -s REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/$script /etc/apcupsd/$script 
-echo "Replace /etc/apcupsd by REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER in $script" 
-/bin/sed -i "s#/etc/apcupsd#REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER#" REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/$script
-done
-/bin/sed -i "s#ISCONFIGURED=no#ISCONFIGURED=yes#" /etc/default/apcupsd
-/bin/sed -i "s#/etc/apcupsd/powerfail#REPLACEBYBASEFOLDER/data/plugins/REPLACEBYSUBFOLDER/powerfail#" /etc/init.d/apcupsd
-/bin/sed -i "s#DEVICE.*#DEVICE#g" /etc/apcupsd/apcupsd.conf
-/bin/sed -i "s#NISIP.*#NISIP 0.0.0.0#g" /etc/apcupsd/apcupsd.conf
+# apcupsd selbst starten, falls es nicht laeuft. Ohne ihn antwortet
+# apcaccess nicht.
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl is-active --quiet apcupsd || systemctl start apcupsd 2>/dev/null
+fi
 
-systemctl daemon-reload
-/etc/init.d/apcupsd restart
+# Der Ueberwachungsdienst braucht keine Rootrechte - apcaccess fragt den
+# laufenden apcupsd ueber das Netz ab. Deshalb als loxberry starten.
+su loxberry -c "nohup $pluginbindir/apc_service.py >> $log 2>&1 &" >/dev/null 2>&1
 
 exit 0
